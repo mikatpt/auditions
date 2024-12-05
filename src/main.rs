@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use owo_colors::OwoColorize;
 use rand::{prelude::*, seq::SliceRandom, Rng};
 use tabled::{builder::Builder, settings::Style, Table};
@@ -5,20 +6,22 @@ use tabled::{builder::Builder, settings::Style, Table};
 fn gen_round(
     rng: &mut ThreadRng,
     solo: &'static str,
+    num_excerpts: usize,
     gen_excerpts: &mut Vec<String>,
     high_excerpts: &[&'static str],
     round: i32,
 ) -> Vec<String> {
-    let high_excerpt = high_excerpts[rng.gen_range(0..2)];
-
     // choose 5 random standard excerpts
     let len = gen_excerpts.len();
-    let range = len - 5..len;
+    let range = len - num_excerpts..len;
     let mut excerpts: Vec<_> = gen_excerpts.drain(range).collect();
 
-    // choose one high, then randomize it in
-    excerpts.push(high_excerpt.cyan().to_string());
-    excerpts.shuffle(rng);
+    if !high_excerpts.is_empty() {
+        let high_excerpt = high_excerpts[rng.gen_range(0..len)];
+        // choose one high, then randomize it in
+        excerpts.push(high_excerpt.cyan().to_string());
+        excerpts.shuffle(rng);
+    }
 
     let mut list = vec![];
 
@@ -62,13 +65,60 @@ fn generate_rounds(
     excerpts.shuffle(&mut rng);
     solos.shuffle(&mut rng);
 
-    let prelims = gen_round(&mut rng, solos[0], &mut excerpts, &high_excerpts, 0);
-    let semis = gen_round(&mut rng, solos[0], &mut excerpts, &high_excerpts, 1);
-    let finals = gen_round(&mut rng, solos[1], &mut excerpts, &high_excerpts, 2);
+    let len = excerpts.len();
+    let mut n = len / 3;
+
+    let prelims = gen_round(&mut rng, solos[0], n, &mut excerpts, &high_excerpts, 0);
+    let finals = gen_round(&mut rng, solos[1], n, &mut excerpts, &high_excerpts, 2);
+    n = excerpts.len();
+    let semis = gen_round(&mut rng, solos[0], n, &mut excerpts, &high_excerpts, 1);
 
     let table = build_table([prelims, semis, finals]);
     println!("{}", "Generating today's excerpt list:\n".green().bold());
     println!("{table}");
+}
+
+fn nso_2nd() {
+    let solos = vec!["Haydn 1st", "Haydn 2nd"];
+
+    let excerpts = vec![
+        "Magnificat",
+        "Leonore 3",
+        "Carmen",
+        "Pictures",
+        "Pines",
+        "Petrushka",
+        "Tannhauser",
+        "Concerto for Orchestra I",
+        "Concerto for Orchestra II",
+        "Concerto for Orchestra V",
+        "Miraculous Mandarin I",
+        "Miraculous Mandarin II",
+        "Beethoven 5 II",
+        "Beethoven 5 IV",
+        "Beethoven Violin Concerto",
+        "Brahms 2",
+        "Bruckner 7",
+        "Mahler 2 Urlicht",
+        "Mahler 4",
+        "Prokofiev 5 I",
+        "Prokofiev 5 II",
+        "Prokofiev Sinfonia",
+        "Alborada del Gracioso",
+        "Scheherazade",
+        "Schumann 2",
+        "Shostakovich 5",
+        "Heldenleben I",
+        "Heldenleben II",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+
+    // magnificat is our only high excerpt.
+    let high_excerpts = vec![];
+
+    generate_rounds(solos, excerpts, high_excerpts);
 }
 
 /*
@@ -109,5 +159,6 @@ fn richmond_3rd() {
 }
 
 fn main() {
-    richmond_3rd();
+    nso_2nd();
+    // richmond_3rd();
 }
